@@ -1,0 +1,20 @@
+{
+    "files.associations": {
+        "atomic": "c",
+        "*.tcc": "c",
+        "optional": "c",
+        "ratio": "c",
+        "system_error": "c",
+        "array": "c",
+        "functional": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "utility": "c",
+        "istream": "c",
+        "ostream": "c",
+        "main.h": "c",
+        "sds.h": "c",
+        "utils.h": "c",
+        "stdio.h": "c"
+    }
+}
