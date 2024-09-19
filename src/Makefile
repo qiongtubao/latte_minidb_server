@@ -1,5 +1,5 @@
 
-LIB_MODUELS="sds config server"
+LIB_MODUELS="sds config server os fs dict_plugins"
 
 uname_S:= $(shell sh -c 'uname -s 2>/dev/null || echo not')
 uname_M:= $(shell sh -c 'uname -s 2>/dev/null || echo not')
@@ -22,7 +22,7 @@ latte_lib:
 	$(LATTE_REDIS_CC) -o $@ -c $< -I../deps/latte_c/out/include 
 
 MAC_M1_CFLAGS=-fprofile-arcs -ftest-coverage
-OBJS= main.o server.o server_conf.o utils.o
+OBJS= main.o server.o server_conf.o utils.o default_handler.o session.o
 # -lstdc++
 all: latte_lib $(OBJS) 
 	$(LATTE_REDIS_CC) -o main $(OBJS) -I../deps/latte_c/out/include ../deps/latte_c/out/lib/liblatte.a  ../deps/latte_c/deps/jemalloc/lib/libjemalloc.a $(FINAL_SHARD_LIB) -lm  -ldl -lz -lstdc++ -lpthread $(MAC_M1_CFLAGS)

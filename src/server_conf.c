@@ -11,8 +11,16 @@ configRule thread_handling_name_rule = SDS_CONFIG_INIT(NULL);
 configRule buffer_pool_memory_size_rule = LL_CONFIG_INIT(NULL);
 configRule durability_mode_rule = SDS_CONFIG_INIT(NULL);
 
+configRule demon_rule = LL_CONFIG_INIT(NULL);
+
+configRule log_file_name_rule = SDS_CONFIG_INIT(NULL);
+configRule log_file_level_rule = LL_CONFIG_INIT(NULL);
+configRule log_console_level_rule = LL_CONFIG_INIT(NULL);
+configRule process_name_rule = SDS_CONFIG_INIT(NULL);
+
 config* createServerConfig() {
     config* c = createConfig();
+    registerConfig(c, sdsnew("process_name"), &process_name_rule);
     registerConfig(c, sdsnew("unix_socket_path"), &unix_socket_path_rule);
     registerConfig(c, sdsnew("server_port"),  &server_port_rule);
     registerConfig(c, sdsnew("protocol"),  &protocol_rule);
@@ -22,6 +30,14 @@ config* createServerConfig() {
     registerConfig(c, sdsnew("thread_handling_name"), &thread_handling_name_rule);
     registerConfig(c, sdsnew("buffer_pool_memory_size"), &buffer_pool_memory_size_rule);
     registerConfig(c, sdsnew("durability_mode"), &durability_mode_rule);
+    
+    registerConfig(c, sdsnew("demon"), &demon_rule);
+
+    registerConfig(c, sdsnew("log_file_name"), &log_file_name_rule);
+    registerConfig(c, sdsnew("log_file_level"), &log_file_level_rule);
+    registerConfig(c, sdsnew("log_console_level"), &log_console_level_rule);
+    
+    
     return c;
 }
 

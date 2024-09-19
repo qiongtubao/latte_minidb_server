@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <unistd.h>
 /** utils  **/
 /* Given the filename, return the absolute path as an SDS string, or NULL
  * if it fails for some reason. Note that "filename" may be an absolute path
@@ -55,3 +56,5 @@ sds getAbsolutePath(char *filename) {
     sdsfree(relpath);
     return abspath;
 }
+
+

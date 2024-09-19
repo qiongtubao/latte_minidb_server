@@ -1,8 +1,9 @@
 #ifndef __LATTE_MINIDB_SERVER_H
 #define __LATTE_MINIDB_SERVER_H
-#include "config/config.h"
-#include "server/server.h"
 
+#include "server/server.h"
+#include "log/log.h"
+#include "default_handler.h"
 config* createServerConfig();
 
 
@@ -15,6 +16,7 @@ typedef struct latteMiniDBServer {
     sds executable; /** execut file path **/
     sds configfile;
     struct config* config;
+    struct dbHandler* hander;
 } latteMiniDBServer;
 
 
@@ -24,5 +26,11 @@ typedef struct latteMiniDBServer {
 #define PRIVATE 
 PRIVATE int initMiniDBServer(struct latteMiniDBServer* redisServer, int argc, sds* argv);
 PRIVATE int startMiniDBServer(struct latteMiniDBServer* redisServer);
+
+#define LATTE_MINIDB_SERVER_LOG_TAG "latte_mini_server"
+#define miniDBServerLog(log, ...) log_log(LATTE_MINIDB_SERVER_LOG_TAG, log, __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__) 
+
+
+
 
 #endif
