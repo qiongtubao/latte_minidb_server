@@ -9,6 +9,8 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include "config/config.h"
+#include "code.h"
+#include "log/log.h"
 sds* parseArgv(int argc, char** argv, int* len) {
     char** result = zmalloc(sizeof(sds)*(argc + 1));
     result[argc] = NULL;
@@ -22,6 +24,19 @@ sds* parseArgv(int argc, char** argv, int* len) {
 
 int initHandler(latteMiniDBServer* server) {
     server->hander = createDefaultHandler();
+    return SUCCESS;
+}
+
+int initLog(latteMiniDBServer* server) {
+  initLogger();
+  log_add_stdout(LATTE_MINIDB_SERVER_LOG_TAG, 
+    configGetInt(server->config, "log_console_level")
+  );
+  log_add_file(LATTE_MINIDB_SERVER_LOG_TAG, 
+    configGetSds(server->config, "log_file_name"), 
+    configGetInt(server->config, "log_file_level")
+  );
+  return SUCCESS;
 }
 //初始化dbserver
 int initMiniDBServer(latteMiniDBServer* server, int argc, char** argv) {
@@ -60,8 +75,9 @@ int initMiniDBServer(latteMiniDBServer* server, int argc, char** argv) {
     if (process_name != NULL) {
       writePidFile(process_name);
     }
+    initLog(server);
     initHandler(server);
-
+    miniDBServerLog(LOG_INFO, "Successfully init utility");
     // startLatteServer(&server->server);
     return 1;
 fail:

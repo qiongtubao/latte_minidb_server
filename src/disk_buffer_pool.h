@@ -1,7 +1,7 @@
 #ifndef __LATTE_DISK_BUFFER_POOL_H
 #define __LATTE_DISK_BUFFER_POOL_H
 
-
+#include "mutex/mutex.h"
 
 
 typedef struct bpFrameManager {

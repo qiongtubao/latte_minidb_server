@@ -15,9 +15,9 @@ dbHandler* createDefaultHandler();
 int init_default_handler(dbHandler* handler, const char* base_dir, const char* trx_kit_name, const char *log_handler_name);
 void destroy_default_handler();
 
-int create_db(dbHandler* handler, const char* dbname);
-int drop_db(const char* dbname);
-int open_db(const char* dbname);
+int handler_create_db(dbHandler* handler, const char* dbname);
+int drop_db(dbHandler* handler, const char* dbname);
+int handler_open_db(dbHandler* handler, const char* dbname);
 int close_db(const char* dbname);
 
 int create_table(const char *dbname, const char *relation_name, dict* attributes);

@@ -13,7 +13,7 @@ configRule durability_mode_rule = SDS_CONFIG_INIT(NULL);
 
 configRule demon_rule = LL_CONFIG_INIT(NULL);
 
-configRule log_file_name_rule = SDS_CONFIG_INIT(NULL);
+configRule log_file_name_rule = SDS_CONFIG_INIT("minidb.log");
 configRule log_file_level_rule = LL_CONFIG_INIT(NULL);
 configRule log_console_level_rule = LL_CONFIG_INIT(NULL);
 configRule process_name_rule = SDS_CONFIG_INIT(NULL);

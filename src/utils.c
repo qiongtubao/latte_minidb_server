@@ -4,6 +4,7 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
+#include <ctype.h>
 /** utils  **/
 /* Given the filename, return the absolute path as an SDS string, or NULL
  * if it fails for some reason. Note that "filename" may be an absolute path
@@ -58,3 +59,21 @@ sds getAbsolutePath(char *filename) {
 }
 
 
+bool is_blank(const char *s) {
+    // 如果字符串指针为 nullptr，则认为该字符串为空白
+    if (s == NULL) {
+        return true;
+    }
+    
+    // 遍历字符串的每一个字符
+    while (*s != '\0') {
+        // 如果当前字符不是空白字符，则返回 false
+        if (!isspace((unsigned char)*s)) {
+            return false;
+        }
+        s++; // 移动到下一个字符
+    }
+    
+    // 如果所有字符都是空白字符，则返回 true
+    return true;
+}

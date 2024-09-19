@@ -12,5 +12,5 @@ typedef struct session {
 } session;
 
 struct session* default_session();
-
+void session_set_current_db(struct session* s, db* d);
 #endif
