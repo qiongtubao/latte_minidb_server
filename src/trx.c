@@ -4,6 +4,9 @@
 #include <strings.h>
 #include "log/log.h"
 #include "code.h"
+#include "trx_vacuous.h"
+#include "trx_mvcc.h"
+
 trxKit* trxKitCreate(sds name) {
     trxKit * trx_kit = NULL;
     int rc;

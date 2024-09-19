@@ -9,9 +9,9 @@ typedef struct dbHandler {
     sds db_dir;             //数据库文件的根目录
     sds trx_kit_name;       //事务模型的名称
     sds log_handler_name;   //日志处理器的名称
-    dict* opened_dbs;       //打开数据库
+    dict* opened_dbs;       //打开数据库 <sds, db*>
 } dbHandler;
-dbHandler* createDefaultHandler();
+dbHandler* defaultHandlerCreate();
 int init_default_handler(dbHandler* handler, const char* base_dir, const char* trx_kit_name, const char *log_handler_name);
 void destroy_default_handler();
 

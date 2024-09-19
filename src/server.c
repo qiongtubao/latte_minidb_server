@@ -10,7 +10,7 @@
 #include <sys/types.h>
 #include "config/config.h"
 #include "code.h"
-#include "log/log.h"
+#include "./log.h"
 sds* parseArgv(int argc, char** argv, int* len) {
     char** result = zmalloc(sizeof(sds)*(argc + 1));
     result[argc] = NULL;
@@ -23,7 +23,17 @@ sds* parseArgv(int argc, char** argv, int* len) {
 
 
 int initHandler(latteMiniDBServer* server) {
-    server->hander = createDefaultHandler();
+    server->hander = defaultHandlerCreate();
+    int ret = init_default_handler(server->hander, 
+        "miniob",
+        configGetSds(server->config, "trx_kit_name"),
+        configGetSds(server->config, "durability_mode")
+    );
+    if (isRcFail(ret)) {
+        miniDBServerLog(LOG_ERROR,"failed to init handler. rc=%d", ret);
+        return -1;
+    }
+    miniDBServerLog(LOG_INFO, "init Handler");
     return SUCCESS;
 }
 
@@ -38,6 +48,7 @@ int initLog(latteMiniDBServer* server) {
   );
   return SUCCESS;
 }
+
 //初始化dbserver
 int initMiniDBServer(latteMiniDBServer* server, int argc, char** argv) {
     int len = 0;

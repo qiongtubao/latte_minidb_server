@@ -5,6 +5,7 @@
 #include "log/log.h"
 #include "fs/dir.h"
 #include "trx.h"
+#include "log.h"
 db* dbCreate() {
     db* d = zmalloc(sizeof(db));
     return d;
@@ -20,7 +21,9 @@ int dbInit(db* d,char* dbname, sds dbpath,
         log_error("latte_lib","Failed to init DB, path is not a directory: %s", dbpath);
         return INVALID_ARGUMENT;
     }
+    miniDBServerLog(LOG_INFO, "dbInit");
     trxKit* trx_kit = trxKitCreate(trx_kit_name);
+    return SUCCESS;
 }
 
 void dbRelease(db* d) {

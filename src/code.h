@@ -11,5 +11,5 @@
 #define IOERR_WRITE 32
 
 
-static bool isRcFail(int rc) { return rc == SUCCESS; }
+static bool isRcFail(int rc) { return rc != SUCCESS; }
 #endif
