@@ -123,7 +123,7 @@ int init_default_handler(dbHandler* handler, const char* base_dir, const char* t
 }
 
 
-struct db* handler_find_db(dbHandler* handler,const char* dbname) {
+db* handler_find_db(dbHandler* handler,const char* dbname) {
     dictEntry* d = dictFind(handler->opened_dbs, dbname);
     return  dictGetVal(d);
 }

@@ -5,6 +5,8 @@
 #include <errno.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <pthread.h>
+#include <stdlib.h>
 /** utils  **/
 /* Given the filename, return the absolute path as an SDS string, or NULL
  * if it fails for some reason. Note that "filename" may be an absolute path
@@ -76,4 +78,16 @@ bool is_blank(const char *s) {
     
     // 如果所有字符都是空白字符，则返回 true
     return true;
+}
+
+// 检查并打印错误信息
+void minidb_assert(int condition, const char *message, ...) {
+    if (!condition) {
+        va_list args;
+        va_start(args, message);
+        fprintf(stderr, "Assertion failed: ");
+        vfprintf(stderr, message, args);
+        va_end(args);
+        exit(EXIT_FAILURE);
+    }
 }

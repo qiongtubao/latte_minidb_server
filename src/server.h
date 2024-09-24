@@ -28,4 +28,4 @@ PRIVATE int startMiniDBServer(struct latteMiniDBServer* redisServer);
 
 
 
-#endif
+#endif /* __LATTE_MINIDB_SERVER_H */

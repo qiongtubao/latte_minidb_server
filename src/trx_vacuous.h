@@ -3,7 +3,7 @@
 
 #include "trx.h"
 typedef struct vacuousTrxKit {
-    trxKit basic;
+    trxKit supper;
 } vacuousTrxKit;
 
 vacuousTrxKit* vacuousTrxKitCreate();

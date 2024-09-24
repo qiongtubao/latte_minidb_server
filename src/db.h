@@ -1,7 +1,9 @@
 #ifndef __LATTE_DB_H
 #define __LATTE_DB_H
+
 #include "sds/sds.h"
 #include "dict/dict.h"
+#include "list/list.h"
 #include "trx.h"
 
 typedef struct db {
@@ -15,14 +17,7 @@ typedef struct db {
     struct LSN* check_point_lsn;
 } db;
 
-typedef struct table {
-    struct db* db;
-    sds base_dir;
-    struct tableMeta* table_meta;
-    struct diskBufferPool* diskBufferPool;
-    struct recordFileHandler* record_handler;
-    struct list* indexes;
-} table;
+
 
 db* dbCreate();
 int dbInit(db* d,char* dbname, sds dbpath, 

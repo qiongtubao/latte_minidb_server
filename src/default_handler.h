@@ -4,6 +4,7 @@
 #include "dict/dict.h"
 #include "sds/sds.h"
 #include "db.h"
+#include "table.h"
 typedef struct dbHandler {
     sds base_dir;           //存储引擎的根目录
     sds db_dir;             //数据库文件的根目录

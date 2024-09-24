@@ -4,9 +4,18 @@
 #include "attr_type.h"
 #include "log/log.h"
 #include "field_meta.h"
+#include "db.h"
+#include "trx_log_mvcc.h"
+logReplayer* mvcc_create_log_replayer(trxKit *kit, db* d, logHandler* handler) {
+    return mvccTrxLogReplayerCreate(d, kit, handler);
+}
+trxKit mvccTrxKitType = {
+    .create_log_replayer = mvcc_create_log_replayer
+};
+
 mvccTrxKit* mvccTrxKitCreate() {
     mvccTrxKit* trx = zmalloc(sizeof(mvccTrxKit));
-    trx->basic.type = MVCC;
+    trx->supper = mvccTrxKitType;
     trx->current_trx_id = 0;
     trx->lock = mutexCreate();
     trx->fields = listCreate();
