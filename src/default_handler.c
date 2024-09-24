@@ -12,36 +12,36 @@
 #include <string.h>
 #include "code.h"
 #include "./utils.h"
-#include "dict_plugins/dict_plugins.h"
+#include "dict/dict_plugins.h"
 #include "./log.h"
-static dictType openedDbDict = {
-    dictCharHash,
+static dict_func_t openedDbDict = {
+    dict_char_hash,
     NULL,
     NULL,
-    dictCharKeyCompare,
-    dictSdsDestructor,
+    dict_char_key_compare,
+    dict_sds_destructor,
     NULL,
     NULL
 };
-dbHandler* defaultHandlerCreate() {
-    dbHandler* handler = zmalloc(sizeof(dbHandler));
+db_handler_t* db_handler_new() {
+    db_handler_t* handler = zmalloc(sizeof(db_handler_t));
     handler->base_dir = NULL;
     handler->db_dir = NULL;
     handler->log_handler_name = NULL;
     handler->trx_kit_name = NULL;
-    handler->opened_dbs = dictCreate(&openedDbDict);
+    handler->opened_dbs = dict_new(&openedDbDict);
     return handler;
 }
 
 
 
-int handler_create_db(dbHandler* handler, const char* dbname) { //创建db
+int handler_create_db(db_handler_t* handler, const char* dbname) { //创建db
     if (NULL == dbname ||
         is_blank(dbname)) {
         log_warn("latte_lib", "Invalid db name");
         return INVALID_ARGUMENT;
     }
-    sds dbpath = sdscatfmt(sdsempty(), "%s/%s", handler->db_dir, dbname);
+    sds dbpath = sds_cat_fmt(sds_empty(), "%s/%s", handler->db_dir, dbname);
     if (dirIs(dbpath)) {
         log_warn("latte_lib", "Db already exists: %s", dbname);
         return SCHEMA_DB_EXIST;
@@ -54,51 +54,51 @@ int handler_create_db(dbHandler* handler, const char* dbname) { //创建db
     return SUCCESS;
 }
 
-int drop_db(dbHandler* handler, const char* dbname) {
+int drop_db(db_handler_t* handler, const char* dbname) {
     return INTERNAL;
 }
 
-int handler_open_db(dbHandler* handler, const char* dbname) {
+int handler_open_db(db_handler_t* handler, const char* dbname) {
     if (NULL == dbname || is_blank(dbname)) {
         miniDBServerLog(LOG_ERROR, "Invalid db name");
         return INVALID_ARGUMENT;
     }
-    dictEntry* entry = dictFind(handler->opened_dbs, dbname);
+    dict_entry_t* entry = dict_find(handler->opened_dbs, dbname);
     if (entry != NULL) {
         miniDBServerLog(LOG_ERROR, "opened db (%s)", dbname);
         return SUCCESS;
     }
 
-    sds dbpath = sdscatfmt(sdsempty(), "%s/%s", handler->db_dir, dbname);
+    sds dbpath = sds_cat_fmt(sds_empty(), "%s/%s", handler->db_dir, dbname);
     if (!dirIs(dbpath)) {
         return SCHEMA_DB_NOT_EXIST;
     }
-    db* d = dbCreate();
+    db_t* d = db_new();
     int ret = SUCCESS;
-    if ((ret = dbInit(d, dbname, dbpath, 
+    if ((ret = db_init(d, dbname, dbpath, 
         handler->trx_kit_name, handler->log_handler_name)) != SUCCESS) {
         miniDBServerLog(LOG_ERROR, "Failed to open db: %s. ", dbname);
-        dbRelease(d);
+        db_delete(d);
     } else {
-        dictAdd(handler->opened_dbs, sdsnew(dbname), d);
+        dict_add(handler->opened_dbs, sds_new(dbname), d);
     }
     return ret;
 }
 
-int init_default_handler(dbHandler* handler, const char* base_dir, const char* trx_kit_name, const char *log_handler_name) {
+int db_handler_init(db_handler_t* handler, const char* base_dir, const char* trx_kit_name, const char *log_handler_name) {
     int rc = 0;
 
-    sds db_dir = sdscatfmt(sdsempty(),"%s/db", base_dir);
+    sds db_dir = sds_cat_fmt(sds_empty(),"%s/db", base_dir);
     if (!dirIs(db_dir) && 
         !isOk(dirCreateRecursive(db_dir, 0755))) {
         miniDBServerLog(LOG_ERROR, "Cannot access base dir: %s. msg=%d:%s", db_dir, errno, strerror(errno));
             return INTERNAL;
     }
     
-    handler->base_dir = sdsnew(base_dir);
+    handler->base_dir = sds_new(base_dir);
     handler->db_dir = db_dir;
-    handler->trx_kit_name = sdsnew(trx_kit_name);
-    handler->log_handler_name = sdsnew(log_handler_name);
+    handler->trx_kit_name = sds_new(trx_kit_name);
+    handler->log_handler_name = sds_new(log_handler_name);
 
     const char* sys_db = "sys";
     int ret = handler_create_db(handler, sys_db); //创建sys_db数据库 只是创建文件夹
@@ -116,14 +116,14 @@ int init_default_handler(dbHandler* handler, const char* base_dir, const char* t
     }
     // 还不知道session什么用， 应该放到哪里
     // struct session* dsession = default_session();
-    // struct db* d = find_db(handler, sys_db);
+    // struct db_t* d = find_db(handler, sys_db);
     // session_set_current_db(dsession, d);
     // log_info("latte_lib", "Default handler init with %s success", base_dir);
     return rc;
 }
 
 
-struct db* handler_find_db(dbHandler* handler,const char* dbname) {
-    dictEntry* d = dictFind(handler->opened_dbs, dbname);
-    return  dictGetVal(d);
+db_t* handler_find_db(db_handler_t* handler,const char* dbname) {
+    dict_entry_t* d = dict_find(handler->opened_dbs, dbname);
+    return  dict_get_val(d);
 }

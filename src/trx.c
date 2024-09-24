@@ -14,7 +14,7 @@ trxKit* trxKitCreate(sds name) {
         0 == strcasecmp(name, "vacuous")) {
         trx_kit = vacuousTrxKitCreate();
         rc = vacuousTrxKitInit(trx_kit);
-        if (isRcFail(rc)) {
+        if (is_rc_fail(rc)) {
             log_error("failed to init trx kit. name=%s, rc=%d", name, rc);
             vacuousTrxKitRelease(trx_kit);
             return NULL;
@@ -22,7 +22,7 @@ trxKit* trxKitCreate(sds name) {
     } else if (0 == strcasecmp(name, "mvcc")) {
         trx_kit = mvccTrxKitCreate();
         rc = mvccTrxKitInit(trx_kit);
-        if (isRcFail(rc)) {
+        if (is_rc_fail(rc)) {
             log_error("failed to init trx kit. name=%s, rc=%d", name, rc);
             mvccTrxKitRelease(trx_kit);
             return NULL;

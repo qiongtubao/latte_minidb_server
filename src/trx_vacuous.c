@@ -2,7 +2,7 @@
 #include "code.h"
 vacuousTrxKit* vacuousTrxKitCreate() {
     vacuousTrxKit* vacuous = zmalloc(sizeof(vacuousTrxKit));
-    vacuous->basic.type = VACUOUS;
+    
     return vacuous;
 }
 

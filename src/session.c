@@ -6,7 +6,7 @@ struct session* default_session() {
     return s;
 }
 
-void session_set_current_db(struct session* s, db* d) {
+void session_set_current_db(struct session* s, db_t* d) {
   if (d == NULL) {
     log_warn("latte_lib", "session set current db is null");
     return;

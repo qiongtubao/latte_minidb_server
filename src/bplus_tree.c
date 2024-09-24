@@ -1,0 +1,203 @@
+#include "bplus_tree.h"
+#include "log.h"
+#include "code.h"
+#include <string.h>
+#include "value.h"
+#include <assert.h>
+
+int bplus_tree_index_handler_close(bplusTreeHandler* handler) {
+    if (handler->disk_buffer_pool != NULL) {
+        disk_buffer_pool_close_file(handler->disk_buffer_pool);
+    }
+    handler->disk_buffer_pool  = NULL;
+    return SUCCESS;
+}
+#define FIRST_INDEX_PAGE 1
+int bplus_tree_index_handler_open_dbp(bplusTreeHandler* handler, log_handler_t* log_handler, disk_buffer_pool_t* disk_buffer_pool) {
+    if (handler->disk_buffer_pool != NULL) {
+        miniDBServerLog(LOG_WARN, "b+ tree has been opened before index.open.");
+        return RECORD_OPENNED;
+    }
+    int rc = SUCCESS;
+
+    frame_t*frame= disk_buffer_pool_get_this_page(disk_buffer_pool,FIRST_INDEX_PAGE);
+    if (frame == NULL) {
+        miniDBServerLog(LOG_WARN,"Failed to get first page, rc=%d", rc);
+        return rc;
+    }
+
+    char* pdata = frame->page->data;
+    //?
+    memcpy(handler->file_header, pdata, sizeof(indexFileHeader));
+    handler->header_dirty = false;
+    handler->disk_buffer_pool = disk_buffer_pool;
+    handler->log_handler = log_handler;
+    
+    handler->mem_pool_item = memPoolItemCreate("b+tree");
+    if (memPoolItemInit(handler->mem_pool_item, handler->file_header->key_length) < 0) {
+        miniDBServerLog(LOG_WARN, "Failed to init memory pool for index");
+        bplus_tree_index_handler_close(handler);
+        return NOMEM;
+    }
+    disk_buffer_pool_unpin_page(handler->disk_buffer_pool, frame);
+    handler->key_comparator.attr_comparator.attr_type = handler->file_header->attr_type;
+    handler->key_comparator.attr_comparator.attr_length = handler->file_header->attr_length;
+
+    handler->key_printer.attr_type = handler->file_header->attr_type;
+    handler->key_printer.attr_length = handler->file_header->attr_length;
+
+    miniDBServerLog(LOG_INFO, "Successfully open index");
+    return rc;
+}
+int bplus_tree_index_handler_open(bplusTreeHandler* handler, log_handler_t* log_handler, buffer_pool_manager_t*  bpm, const char* file_name) {
+    if (handler->disk_buffer_pool != NULL) {
+        miniDBServerLog(LOG_WARN, "%s has been opened before index.open.", file_name);
+        return RECORD_OPENNED;
+    }
+
+    disk_buffer_pool_t* disk_buffer_pool;
+    int rc = buffer_pool_manager_open_file(bpm, log_handler, file_name, &disk_buffer_pool);
+    if (is_rc_fail(rc)) {
+        disk_buffer_pool_delete(disk_buffer_pool);
+        miniDBServerLog(LOG_WARN, "Failed to open file name=%s, rc=%d", file_name, rc);
+        return rc;
+    }
+
+    rc = bplus_tree_index_handler_open_dbp(handler, log_handler, disk_buffer_pool);
+    if (!is_rc_fail(rc)) {
+        miniDBServerLog(LOG_INFO, "open b+tree success. filename=%s", file_name);
+    }
+    return rc;
+}
+
+attrComparator* attrComparatorCreate(attr_type_enum attr_type, int attr_length) {
+    attrComparator* comparator =  zmalloc(sizeof(attrComparator));
+    comparator->attr_type = attr_type;
+    comparator->attr_length = attr_length;
+    return comparator;
+}
+
+
+
+typedef struct DataType {
+    attr_type_enum attr_type;
+    /**
+     * @return
+     *  -1 表示 left < right
+     *  0 表示 left = right
+     *  1 表示 left > right
+     *  INT32_MAX 表示未实现的比较
+     */
+    int (*compare)(value_t left, value_t right);
+} DataType;
+
+
+int undefined_compare(value_t left, value_t right) {
+    assert(left.type == VALUE_UNDEFINED
+        && right.type == VALUE_UNDEFINED);
+    return INT32_MAX; 
+}
+
+int charType_compare(value_t left, value_t right) {
+    assert(left.type == VALUE_SDS && 
+        right.type == VALUE_SDS);
+        //这里小心点 如果未来出现问题的话 可能是 sds 使用的memcmp比较的   而原代码是使用strncmp比较的
+    return sds_cmp(left.value.sds_value, right.value.sds_value);
+}
+
+#define EPSILON (1E-6)
+int compare_float(float v1, float v2) {
+    float cmp = v1 - v2;
+    return cmp > EPSILON? 1: (cmp < -EPSILON? -1: 0);
+}
+
+int compare_longdouble(long double v1, long double v2) {
+    long double cmp = v1 - v2;
+    return cmp > EPSILON? 1: (cmp < -EPSILON? -1: 0);
+}
+int intsType_compare(value_t left, value_t right) {
+    assert(left.type == VALUE_INT && 
+        (right.type == VALUE_INT || right.type == VALUE_UINT || right.type == VALUE_DOUBLE) );
+    
+    if (right.type == VALUE_INT) {
+        int64_t v1 =  left.value.i64_value;
+        int64_t v2 =  right.value.i64_value;
+        return v1 > v2 ? 1: (v1 < v2? -1 :0); 
+    } else if (right.type == VALUE_UINT) {
+        int64_t v1 =  left.value.i64_value;
+        if (right.value.u64_value > LLONG_MAX) {
+            return -1;
+        }
+        int64_t v2 =  (int64_t)right.value.u64_value;
+        return v1 > v2 ? 1: (v1 < v2? -1 :0); 
+    } else if (right.type == VALUE_DOUBLE) {
+        //误差在1E-6以内都算相等
+        long double v1 = (long double)left.value.i64_value;
+        long double v2 = right.value.ld_value;
+        return compare_float(v1, v2);
+    }
+    return INT32_MAX;
+}
+
+
+int floatsType_compare(value_t left, value_t right) {
+    
+    assert(left.type == VALUE_DOUBLE && 
+        right.type == VALUE_DOUBLE || right.type == VALUE_INT  ||  right.type == VALUE_UINT);
+
+    long double v1 = left.value.ld_value;
+    if (right.type == VALUE_DOUBLE) {
+        long double v2 = right.value.ld_value;
+        return compare_longdouble(v1, v2);
+    } else if (right.type == VALUE_INT) {
+        long double v2 = (long double)right.value.i64_value;
+        return compare_longdouble(v1, v2);
+    } else if (right.type == VALUE_UINT) {
+        long double v2 = (long double)right.value.u64_value;
+        return compare_longdouble(v1, v2);
+    }
+    return INT32_MAX;
+}
+
+
+DataType type_instances[5] = {
+    {
+        .attr_type = UNDEFINED, //DataType(UNDEFINED)
+        .compare = undefined_compare
+    },
+    {
+        .attr_type = CHARS,  //CharType
+        .compare = charType_compare
+    },
+    {
+        .attr_type = INTS,  //IntegerType
+        .compare = intsType_compare
+    },
+    {
+        .attr_type = FLOATS,  //IntegerType
+        .compare = floatsType_compare
+    },
+    {
+        .attr_type = BOOLEANS,  //DataType(BOOLEANS)
+        .compare = undefined_compare    //返回未实现的比较  （暂时还不好确定  true和flase 谁大谁小）
+    }
+
+};
+
+
+
+int attrComparator_operator(attrComparator* c,const char* v1, const char* v2) {
+    value_t left;
+    // left.attr_type = attr_type_to_value_type(c->attr_type);
+    // value_set_data(&left, v1, c->attr_length);
+    value_type_enum vtype = attr_type_to_value_type(c->attr_type);
+    value_set_binary(&left, vtype,v1, c->attr_length);
+    value_t right;
+    // right.attr_type = c->attr_type;
+    // value_set_data(&right, v2, c->attr_length);
+    value_set_binary(&right,vtype,v2, c->attr_length);
+
+    DataType type = type_instances[c->attr_type];
+    return type.compare(left, right);
+}
+

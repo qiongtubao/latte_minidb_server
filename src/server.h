@@ -3,7 +3,7 @@
 
 #include "server/server.h"
 #include "default_handler.h"
-config* createServerConfig();
+config_manager_t* createServerConfig();
 
 
 
@@ -15,7 +15,7 @@ typedef struct latteMiniDBServer {
     sds executable; /** execut file path **/
     sds configfile;
     struct config* config;
-    struct dbHandler* hander;
+    struct db_handler_t* hander;
 } latteMiniDBServer;
 
 
@@ -28,4 +28,4 @@ PRIVATE int startMiniDBServer(struct latteMiniDBServer* redisServer);
 
 
 
-#endif
+#endif /* __LATTE_MINIDB_SERVER_H */
